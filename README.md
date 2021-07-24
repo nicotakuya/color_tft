@@ -20,8 +20,14 @@ https://akizukidenshi.com/catalog/g/gM-15178/
 
 ## appendix
 
-ユニバーサル基板 140×40mm(150yen)
+ユニバーサル基板 140×40mm
 
 https://akizukidenshi.com/catalog/g/gP-03250/
 
 ![photo2](https://user-images.githubusercontent.com/5597377/126858131-3bb60c60-df49-4f26-9648-1a34f9e3894d.jpg)
+
+## Reference
+
+"TFT_ILI9163C" by Max MC Costa(sumotoy)
+
+https://github.com/sumotoy/TFT_ILI9163C
