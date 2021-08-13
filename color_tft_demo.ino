@@ -70,7 +70,7 @@
 #define INTERFACE_PIXEL_FORMAT    0x3A
 #define FRAME_RATE_CONTROL_1      0xB1
 #define DISPLAY_INVERSION_CONTROL 0xB4
-#define DISPLAY_FUCTION_SET       0xb6
+#define DISPLAY_FUCTION_SET       0xB6
 #define POWER_CONTROL_1           0xC0
 #define POWER_CONTROL_2           0xC1
 #define VCOM_CONTROL_1            0xC5
@@ -81,9 +81,26 @@
 
 #define VRAMWIDTH        128  // width[pixel]
 #define VRAMHEIGHT       160  // height[pixel]
+#define VRAMSIZE   (VRAMWIDTH*VRAMHEIGHT)
+
+#define ROTATE  0 //TURN SCREEN(0=normal / 1=turn90 / 2=turn180 / 3=turn270)
+
+#if ROTATE==0
 #define VRAMXMAX  (VRAMWIDTH-1)
 #define VRAMYMAX  (VRAMHEIGHT-1)
-#define VRAMSIZE   (VRAMWIDTH*VRAMHEIGHT)
+#endif
+#if ROTATE==1
+#define VRAMYMAX  (VRAMWIDTH-1)
+#define VRAMXMAX  (VRAMHEIGHT-1)
+#endif
+#if ROTATE==2
+#define VRAMXMAX  (VRAMWIDTH-1)
+#define VRAMYMAX  (VRAMHEIGHT-1)
+#endif
+#if ROTATE==3
+#define VRAMYMAX  (VRAMWIDTH-1)
+#define VRAMXMAX  (VRAMHEIGHT-1)
+#endif
 
 unsigned char vram[VRAMSIZE];
 
@@ -96,7 +113,7 @@ const unsigned char n_gamma_table[] = {
 };
 
 const unsigned int colortable[]={
-/*  rrrrrgggggbbbbbb */
+/*  rrrrrgggggbbbbbb(6+5+6) */
   0b0000000000000000, /*color 0*/
   0b0000000000111111, /*color 1*/
   0b1111100000000000, /*color 2*/
@@ -106,6 +123,17 @@ const unsigned int colortable[]={
   0b1111111111000000, /*color 6*/
   0b1111111111111111  /*color 7*/
 };
+
+/*    rrrggbbb(3+2+3) */
+//  0b00000000, /*color 0*/
+//  0b00000111, /*color 1*/
+//  0b11100000, /*color 2*/
+//  0b11100111, /*color 3*/
+//  0b00011000, /*color 4*/
+//  0b00011111, /*color 5*/
+//  0b11111000, /*color 6*/
+//  0b11111111  /*color 7*/
+
 
 void tft_init(void)
 {
@@ -229,21 +257,19 @@ void tft_sendcmd_long(unsigned char cmd,unsigned long data)
 // 
 void tft_from_vram(void)
 {
-  int x,y,i;
-  unsigned int bitmask;
-  unsigned int r,g,b;
+  int i;
   unsigned int color;
   unsigned char *ptr;
   
   tft_sendcmd(MEMORY_WRITE);
   digitalWrite(TFTCS,LOW);
   ptr = (unsigned char *)vram;
-  for(y=0; y<VRAMHEIGHT; y++){
-    for(x=0; x<VRAMWIDTH; x++){
-      color = colortable[*ptr++];
-      spi_sendbyte(color >> 8);
-      spi_sendbyte(color & 0xff);
-    }
+  i = VRAMSIZE;
+  while(i--)
+  {
+    color = colortable[*ptr++];
+    spi_sendbyte(color >> 8);
+    spi_sendbyte(color & 0xff);
   }
   digitalWrite(TFTCS,HIGH);
   delay(1);
@@ -259,12 +285,25 @@ void vram_cls(void)
   }
 }
 
-
 //ピクセル取得(X座標,Y座標)
 unsigned char vram_point(int x,int y)
 {
-  unsigned char mask;
   int i;
+
+#if ROTATE==1
+  i=x;
+  x=(VRAMWIDTH-1)-y;
+  y=i;
+#endif
+#if ROTATE==2
+  x=(VRAMWIDTH-1)-x;
+  y=(VRAMHEIGHT-1)-y;
+#endif
+#if ROTATE==3
+  i=x;
+  x=y;
+  y=(VRAMHEIGHT-1)-i;
+#endif
 
   if(x<0)return(0);
   if(y<0)return(0);
@@ -280,6 +319,21 @@ unsigned char vram_point(int x,int y)
 void vram_pset(int x,int y,unsigned char color)
 {
   int i;
+
+#if ROTATE==1
+  i=x;
+  x=(VRAMWIDTH-1)-y;
+  y=i;
+#endif
+#if ROTATE==2
+  x=(VRAMWIDTH-1)-x;
+  y=(VRAMHEIGHT-1)-y;
+#endif
+#if ROTATE==3
+  i=x;
+  x=y;
+  y=(VRAMHEIGHT-1)-i;
+#endif
 
   if(x<0)return;
   if(y<0)return;
@@ -346,8 +400,7 @@ void setup(void)
 }
 
 
-// 1キャラクタをVRAM転送
-// 引数 x,y,chキャラクターコード
+// 1キャラクタをVRAM転送(x,y,chキャラクターコード,color)
 void vram_putch(int textx, int texty, unsigned char ch,unsigned char color)
 {
   char i,j;
@@ -365,16 +418,19 @@ void vram_putch(int textx, int texty, unsigned char ch,unsigned char color)
   }
 }
 
-void vram_scroll(int x1,int y1){
+void vram_scroll(int xd,int yd){
   int x,y;
+  int xn,yn;
   unsigned char color;
 
-  for(y=0;y<VRAMHEIGHT;y++){
-    for(x=0;x<VRAMWIDTH;x++){
-      if(((x+x1)>=VRAMWIDTH)||((y+y1)>=VRAMHEIGHT)){
+  for(y=0;y<(VRAMYMAX+1);y++){
+    for(x=0;x<(VRAMXMAX+1);x++){
+      xn = x+xd;
+      yn = y+yd;
+      if((xn > VRAMXMAX)||(yn > VRAMYMAX)){
         color = 0;
       }else{
-        color = vram_point(x+x1, y+y1);
+        color = vram_point(xn, yn);
       }
       vram_pset(x,y,color);
     }
@@ -382,7 +438,7 @@ void vram_scroll(int x1,int y1){
 }
 
 
-void chartest()
+void chartest(void)
 {
   int x,y;
   unsigned char chrnum;
@@ -391,7 +447,7 @@ void chartest()
 
   timeout=1000;
   x=0;
-  y=VRAMHEIGHT-8;
+  y=VRAMYMAX-7;
   chrnum=0x20;
   color=7;
   while(timeout--){
@@ -402,7 +458,7 @@ void chartest()
       color++;
       if(color > 7)color=1;
     }
-    x = (x+8) % VRAMWIDTH;
+    x = (x+8) % (VRAMXMAX+1);
     if(x == 0){
       vram_scroll(0,8);
     }  
@@ -410,7 +466,7 @@ void chartest()
   }
 }
   
-void bound()
+void bound(void)
 {
   int xa,ya,xb,yb;
   int xa1,ya1,xb1,yb1;
@@ -418,10 +474,10 @@ void bound()
   int timeout;
 
   timeout = 1000;
-  xa =random(VRAMWIDTH-2)+1;
-  ya =random(VRAMHEIGHT-2)+1;
-  xb =random(VRAMWIDTH-2)+1;
-  yb =random(VRAMHEIGHT-2)+1;
+  xa =random(VRAMXMAX-1)+1;
+  ya =random(VRAMYMAX-1)+1;
+  xb =random(VRAMXMAX-1)+1;
+  yb =random(VRAMYMAX-1)+1;
   xa1 =random(5)-2;
   ya1 =random(5)-2;
   xb1 =random(5)-2;
