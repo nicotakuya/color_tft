@@ -116,6 +116,54 @@ const unsigned char n_gamma_table[] = {
 
 // sprite pattern
 const unsigned char sp_pattern[] = {
+  0b0010100,
+  0b0010100,
+  0b0011100,
+  0b0011100,
+  0b1111111,
+  0b1111111,
+  0b1011101,
+
+  0b0111110,
+  0b1111111,
+  0b1000001,
+  0b1111111,
+  0b1111111,
+  0b1100011,
+  0b0110110,
+
+  0b0111110,
+  0b1111111,
+  0b1100011,
+  0b1111111,
+  0b1111111,
+  0b0110110,
+  0b1100011,
+
+  0b0110110,
+  0b0011100,
+  0b0011100,
+  0b0011100,
+  0b0011100,
+  0b0011100,
+  0b0001000,
+
+  0b1001001,
+  0b0101010,
+  0b0000000,
+  0b1100011,
+  0b0000000,
+  0b0101010,
+  0b1001001,
+
+  0b0001000,
+  0b0011100,
+  0b0011100,
+  0b0011100,
+  0b0011100,
+  0b0011100,
+  0b0110110,
+  
   0b0011100,
   0b0111110,
   0b1110111,
@@ -125,7 +173,7 @@ const unsigned char sp_pattern[] = {
   0b0011100
 };
 
-// vectol
+// vector
 const unsigned char vect_table[]={
     0,/* 0 degrees*/
     4,/* 1 degrees*/
@@ -246,6 +294,9 @@ void vram_fill(int x1 ,int y1 ,int x2 ,int y2 ,char color);
 void vram_locate(int textx, int texty);
 void vram_textcolor(unsigned char color);
 void vram_putch(unsigned char ch);
+void vram_putstr(unsigned char *p);
+void vram_putdec(unsigned int num);
+void vram_puthex(unsigned int num);
 void vram_scroll(int xd,int yd);
 void vram_spput(char x,char y, int num,unsigned char color);
 void spi_sendbyte(unsigned char data);
@@ -630,13 +681,13 @@ void vram_putnum(int num)
   vram_putch( '0'+(num % 10));
 }
 
-void vram_putdec(unsigned int x)
+void vram_putdec(unsigned int num)
 {
     unsigned char ch;
     unsigned int shift=10000;
   
   while(shift > 0){
-    ch = (x / shift) % 10;
+    ch = (num / shift) % 10;
     ch += '0';
     vram_putch(ch);
     shift /= 10;
@@ -848,13 +899,14 @@ void balldemo(void)
       if(y2 <= 3) ball[i].y1 = (random(MLT*2)+1);
       if(y2 >= (VRAMYMAX-3)) ball[i].y1 = -(random(MLT*2)+1);
       
-      vram_spput(x2,y2,0,(i % 7)+1);
+      vram_spput(x2,y2,6,(i % 7)+1);
     }
     tft_from_vram();
   }
 }
 
-void vectoldemo(void)
+//vector
+void vectordemo(void)
 {
   typedef struct inseki{
     int x;
@@ -973,9 +1025,163 @@ void lifegame(void)
   }
 }
 
+// space fight
+void spacefight(void)
+{
+#define TEKIMAX 15
+#define MOVEPITCH 30  //移動カウント
+#define MOVESEQ   (10+10+2+2) //移動シーケンス
+const unsigned char strready[]="READY";
+const unsigned char strover[]="GAME OVER";
+
+  int tx[TEKIMAX]; //敵座標
+  int ty[TEKIMAX];
+  int tb[TEKIMAX];
+  char ttime; //Enemy Timing
+  char tmove; //Enemy Moving
+  char gamespeed=0; //game speed
+  int score=0;  //Score
+  char tnum;  //Enemy Count
+  int ax=0,ay; //My Ship X,Y
+  int bx,by; //My Ship Beam
+  int cx,cy; //Enemy Beam
+  int x,y;
+  int i;
+  char overflag=1;
+  int timeout;
+
+  timeout=300;
+  while(timeout){
+    vram_cls();
+    if(overflag){
+      overflag=0;
+      vram_textcolor(6);
+      vram_locate(43,VRAMYMAX/2);
+      vram_putstr((unsigned char *)strready);
+      score=0;
+      gamespeed=MOVEPITCH;
+      ax=VRAMXMAX/2;  //プレーヤ座標
+      ay=VRAMYMAX-10;
+    }
+    vram_spput(ax, ay, 0,7);    //my ship
+    bx=by=-1;   //自弾座標
+    cx=cy=-1;   //敵弾座標
+
+    for(i=0;i<TEKIMAX;i++){
+      tx[i] = ((i % 5)*14)+30;
+      ty[i] = ((i / 5)*12)+4;
+      tb[i] = 0;
+    }
+
+    tmove=0;
+    ttime=0;
+    tft_from_vram();
+    delay(1000);
+
+    while(overflag==0){
+      vram_cls(); 
+//      ax += joy_getx()/60;
+      if(ax<8)ax=8;
+      if(ax>VRAMXMAX-8)ax=VRAMXMAX-8;
+      vram_spput(ax, ay, 0,7);    //my ship
+
+      if(by < -1){
+        bx=ax;
+        by=ay;
+      }else{
+        by-=2;
+        vram_spput(bx,by,5,5);  //my meam
+      }
+
+      //Enemy Beam
+      if(cy == -1){
+        i=random(TEKIMAX);
+        if(ty[i] != -1){
+          cx = tx[i];
+          cy = ty[i];
+        }
+      }else{
+        cy++;
+        if(cy > VRAMYMAX){
+          cy = -1;
+        }else{
+          vram_spput(cx,cy,3,6);
+        }
+      }
+
+      ttime = (ttime+1)%gamespeed;
+      if (ttime==0) {
+        tmove=(tmove+1) % MOVESEQ;
+      }
+
+      tnum=0;
+      for(i=0 ;i<TEKIMAX ;i++) {
+        x=tx[i];
+        y=ty[i];
+        if(y == -1)continue;
+        tnum++;
+
+        if(tb[i]){
+          tb[i]--;
+          vram_spput(x,y,4,7);
+          if(tb[i]==0)
+            ty[i]=-1;
+          continue;
+        }
+        if((fnc_abs(by-y)<5)&&(fnc_abs(bx-x)<5)){ //命中
+          if(score < 9999)score++;
+          if(gamespeed > 2)gamespeed-=1;
+          tb[i]=15;
+          by=-1;
+          continue;
+        }
+        if(ttime==0){
+          if(tmove < 10){//01234
+            x+=2;
+          }else if(tmove < (10+2)){//5
+            y+=2;
+          }else if(tmove < (10+2+10)){//6789a
+            x-=2;
+          }else{
+            y+=2;
+          }
+          if(y >= VRAMYMAX)
+            overflag=1;
+        }
+        tx[i]=x;
+        ty[i]=y;
+        vram_spput(x,y ,1+(tmove & 1),3);
+        continue;
+      }
+      if((fnc_abs(cy-ay)<5)&&(fnc_abs(cx-ax)<5)){
+        overflag=1;
+      }
+
+      if(tnum==0){  //敵全滅
+        gamespeed+=8;
+        break;
+      }
+      tft_from_vram();
+      timeout--;
+      if(timeout==0)break;
+    }
+    if(overflag){ //game over
+      vram_spclr(ax,ay);
+      vram_spput(ax, ay, 4,7);    //------自機をvramに転送
+      vram_locate(28,VRAMYMAX/4);
+      vram_putstr((unsigned char *)strover);
+      vram_locate(48,VRAMYMAX*3/4);
+      vram_putdec(score);
+      tft_from_vram();
+      delay(1000);
+    }
+  }
+}
+
 void loop()
 {
-  vectoldemo();
+  spacefight();
+  vectordemo();
   lifegame();
   balldemo();
   chardemo();
