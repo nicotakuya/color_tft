@@ -1178,8 +1178,71 @@ const unsigned char strover[]="GAME OVER";
   }
 }
 
+void randscape(void)
+{
+#define RANDSCAPEY1  ((VRAMYMAX/2)-3)
+#define RANDSCAPEY2 ((VRAMYMAX/2)+3)
+#define DEGPITCH  15
+  int x1,x2,y,i,deg,iso=0;
+  int timeout;
+
+  timeout=300;
+  while(timeout--){
+    iso += 3;
+    if(iso< 0       )iso += DEGPITCH;
+    if(iso>=DEGPITCH)iso -= DEGPITCH;
+
+    vram_cls();
+    for(i=-10; i<10; i++){
+      x1=i*6;
+      x2=i*25;
+      vram_line((VRAMXMAX/2)+x1,RANDSCAPEY1,(VRAMXMAX/2)+x2, 0,5);
+      vram_line((VRAMXMAX/2)+x1,RANDSCAPEY2,(VRAMXMAX/2)+x2,VRAMYMAX,4);
+    }
+
+    for(deg=0; deg<90; deg+=DEGPITCH){
+      y=(255+vect_y1(deg+iso))*RANDSCAPEY1/255;
+      vram_line(0,RANDSCAPEY1-y,VRAMXMAX,RANDSCAPEY1-y,5);
+      vram_line(0,RANDSCAPEY2+y,VRAMXMAX,RANDSCAPEY2+y,4);
+    }
+    tft_from_vram();
+  }
+}
+
+void vmeter(void)
+{
+  int x,y;
+  int adc;
+  int deg;
+  int timeout;
+
+  vram_cls();
+  deg=0;
+  timeout=300;
+  while(timeout--)
+  {
+    adc = vect_x1(deg);
+    vram_scroll(2,0);
+    x = VRAMXMAX;
+    for(y=0; y<VRAMYMAX+1; y+=10){
+        vram_pset(x, y ,1);
+    }
+    y = (VRAMYMAX/2)-(adc*(VRAMYMAX/2)/255); 
+    vram_pset(x, y,6);
+    if((deg % 90) == 0){
+      for(y=0; y<VRAMYMAX+1; y+=2){
+        vram_pset(x, y ,4);
+      }
+    }
+    deg = (deg+5)% 360;
+    tft_from_vram();
+  }
+}
+
 void loop()
 {
+  vmeter();
+  randscape();
   spacefight();
   vectordemo();
   lifegame();
