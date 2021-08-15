@@ -32,6 +32,8 @@ https://akizukidenshi.com/catalog/g/gP-03250/
 
 ![rotate1](https://user-images.githubusercontent.com/5597377/129410965-5524a431-d700-490d-b8fe-a8d850242b7e.jpg)
 
+https://www.youtube.com/watch?v=eHoU3fK6BLY
+
 ## Reference
 
 "TFT_ILI9163C" by Max MC Costa(sumotoy)
