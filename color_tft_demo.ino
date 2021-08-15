@@ -269,16 +269,17 @@ const unsigned char vect_table[]={
 };
 
 const unsigned int colortable[]={
-/*  rrrrrgggggbbbbbb(6+5+6) */
+/*  rrrrrggggggbbbbb(5:6:5) */
   0b0000000000000000, /*color 0*/
-  0b0000000000111111, /*color 1*/
+  0b0000000000011111, /*color 1*/
   0b1111100000000000, /*color 2*/
-  0b1111100000111111, /*color 3*/
-  0b0000011111000000, /*color 4*/
+  0b1111100000011111, /*color 3*/
+  0b0000011111100000, /*color 4*/
   0b0000011111111111, /*color 5*/
-  0b1111111111000000, /*color 6*/
+  0b1111111111100000, /*color 6*/
   0b1111111111111111  /*color 7*/
 };
+
 typedef struct vecline{
   int ang;
   int len;
@@ -299,10 +300,12 @@ void vram_putdec(unsigned int num);
 void vram_puthex(unsigned int num);
 void vram_scroll(int xd,int yd);
 void vram_spput(char x,char y, int num,unsigned char color);
+void vram_spclr(int x,int y);
 void spi_sendbyte(unsigned char data);
 int vect_x1(int a);
 int vect_y1(int a);
 void vect_put(PVECLINE pV,int vx,int vy,int angle,int zoom,unsigned char color);
+unsigned int color16bit(int r,int g,int b);
 
 // near sin(degree)
 int vect_y1(int a)
@@ -496,6 +499,40 @@ void tft_from_vram(void)
   delay(1);
 }
 
+unsigned int color16bit(int r,int g,int b)
+{
+  r>>=3;
+  g>>=2;
+  b>>=3;
+  return(((unsigned int)r << 11)+(g << 5)+b);
+}
+
+
+// color test
+void tft_colortest(void)
+{
+  int x,y;
+  int r,g,b;
+  unsigned int color;
+  
+  tft_sendcmd(MEMORY_WRITE);
+  digitalWrite(TFTCS,LOW);
+  for(y=0; y<160; y++)
+  {
+    for(x=0; x<128; x++)
+    {
+      r = x*256/128;
+      g = y*256/160;
+      b = (y%(160/4))*256/(160/4);
+      color = color16bit(r,g,b);
+      spi_sendbyte(color >> 8);
+      spi_sendbyte(color & 0xff);
+    }
+  }
+  digitalWrite(TFTCS,HIGH);
+  delay(5000);
+}
+
 void vram_cls(void)
 {
   int i;
@@ -631,6 +668,7 @@ void vram_locate(int textx, int texty)
   def_posy = texty;
 }
 
+//
 void vram_textcolor(unsigned char color)
 {
   def_tcolor = color;
@@ -674,13 +712,7 @@ void vram_putstr(unsigned char *p)
   }
 }
 
-// print decimal number
-void vram_putnum(int num)
-{
-  vram_putch( '0'+(num / 10));
-  vram_putch( '0'+(num % 10));
-}
-
+//
 void vram_putdec(unsigned int num)
 {
     unsigned char ch;
@@ -693,6 +725,7 @@ void vram_putdec(unsigned int num)
     shift /= 10;
   }
 }
+
 // print Hexadecimal number
 void vram_puthex(unsigned char num)
 {
@@ -733,7 +766,7 @@ void vram_spput(char x,char y, int num,unsigned char color)
   }
 }
 
-void vram_spclr(char x,char y)
+void vram_spclr(int x,int y)
 {
   char i,j;
 
@@ -1241,6 +1274,7 @@ void vmeter(void)
 
 void loop()
 {
+  tft_colortest();
   vmeter();
   randscape();
   spacefight();
