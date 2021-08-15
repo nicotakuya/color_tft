@@ -74,8 +74,6 @@
 #define GRAMWIDTH        128  // width[pixel]
 #define GRAMHEIGHT       160  // height[pixel]
 
-#define SPIWAIT 5
-
 const unsigned char p_gamma_table[] = {
   0x36,0x29,0x12,0x22,0x1C,0x15,0x42,0xB7,0x2F,0x13,0x12,0x0A,0x11,0x0B,0x06
 };
@@ -84,18 +82,11 @@ const unsigned char n_gamma_table[] = {
   0x09,0x16,0x2D,0x0D,0x13,0x15,0x40,0x48,0x53,0x0C,0x1D,0x25,0x2E,0x34,0x39
 };
 
-void waitloop(long count)
-{
-  while(count--);
-}
-
 void spi_sendbyte(unsigned char data)
 {
   unsigned char bitmask;
-  waitloop(SPIWAIT);
   digitalWrite(TFTCS,LOW);
   digitalWrite(SPICLK, LOW);
-  waitloop(SPIWAIT);
   bitmask = 0x80;
   while(bitmask){
     if(bitmask & data){
@@ -103,15 +94,11 @@ void spi_sendbyte(unsigned char data)
     }else{
       digitalWrite(SPIDAT, LOW);
     }    
-    waitloop(SPIWAIT);
     digitalWrite(SPICLK, HIGH);
-    waitloop(SPIWAIT);
     digitalWrite(SPICLK, LOW);
     bitmask >>= 1;
   }
-  waitloop(SPIWAIT);
   digitalWrite(TFTCS,HIGH);
-  waitloop(SPIWAIT);
 }
 
 void tft_sendcmd(unsigned char data)
@@ -171,14 +158,14 @@ void tft_display_test(void){
   for(y=0; y<160; y++){
     for(x=0; x<128; x++){
       mode = (y / 40);
-      if(mode==0) color = ((y % 40)*0x1f/39);     //blue
-      if(mode==1) color = ((y % 40)*0x1f/39)<<6;  //green
-      if(mode==2) color = ((y % 40)*0x1f/39)<<11; //red
+      if(mode==0) color = ((y % 40)*0x1f/39);     //blue(5bit)
+      if(mode==1) color = ((y % 40)*0x3f/39)<<5;  //green(6bit)
+      if(mode==2) color = ((y % 40)*0x1f/39)<<11; //red(5bit)
       if(mode==3){ //grayscale
-        b=(y % 40)*0x1f/39;
-        r=b;
-        g=b;
-        color = (r<<11)+(g<<6)+b; 
+        r=(y % 40)*0x1f/39;
+        g=(y % 40)*0x3f/39;
+        b=r;
+        color = (r<<11)+(g<<5)+b; 
       }
       tft_send_data(color >> 8);
       tft_send_data(color & 0xff);
