@@ -16,9 +16,8 @@ Seeeduino XIAO
 
 https://akizukidenshi.com/catalog/g/gM-15178/
 
+470ohm 抵抗
 ユニバーサル基板 140×40mm
-
-https://akizukidenshi.com/catalog/g/gP-03250/
 
 ![photo2](https://user-images.githubusercontent.com/5597377/126858131-3bb60c60-df49-4f26-9648-1a34f9e3894d.jpg)
 
@@ -27,8 +26,6 @@ https://akizukidenshi.com/catalog/g/gP-03250/
 ![schematics](https://user-images.githubusercontent.com/5597377/126858130-0651a19e-adb0-4ece-b0d2-5f415777ef44.png)
 
 ## demo program
-
-  #define ROTATE 1
 
 ![rotate1](https://user-images.githubusercontent.com/5597377/129410965-5524a431-d700-490d-b8fe-a8d850242b7e.jpg)
 
