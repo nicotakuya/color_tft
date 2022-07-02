@@ -2,13 +2,13 @@
 
 ## overview
 
-color TFT(128×160pixel) test program.
+color TFT(AE-ATM0177B3A) test program.
 
 ![photo1](https://user-images.githubusercontent.com/5597377/126858125-337e90ba-b827-49cd-85a2-7a220cbab5e5.jpg)
 
 ## parts list
 
-1.77inch Color Graphics TFT LCD 評価キット(AE-ATM0177B3A)
+1.77inch Color Graphics TFT LCD 評価キット(AE-ATM0177B3A).128×160pixel.
 
 https://akizukidenshi.com/catalog/g/gK-14032/
 
