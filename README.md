@@ -8,17 +8,15 @@ color TFT(AE-ATM0177B3A) test program.
 
 ## parts list
 
-1.77inch Color Graphics TFT LCD 評価キット(AE-ATM0177B3A).128×160pixel.
+・1.77inch Color Graphics TFT LCD 評価キット(AE-ATM0177B3A).128×160pixel.
 
 https://akizukidenshi.com/catalog/g/gK-14032/
 
-Seeeduino XIAO
+・マイコン。Seeeduino XIAO。
 
-https://akizukidenshi.com/catalog/g/gM-15178/
+・バックライトの明るさ調整用の抵抗。51～470ohm。
 
-470ohm 抵抗
-
-ユニバーサル基板 140×40mm
+・ユニバーサル基板 140×40mm。
 
 ![photo2](https://user-images.githubusercontent.com/5597377/126858131-3bb60c60-df49-4f26-9648-1a34f9e3894d.jpg)
 
